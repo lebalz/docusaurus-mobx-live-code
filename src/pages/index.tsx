@@ -1,9 +1,7 @@
 import clsx from 'clsx';
-import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
-import Heading from '@theme/Heading';
+import ContextEditor from 'docusaurus-live-brython/theme/CodeEditor/ContextEditor';
 
 import styles from './index.module.css';
 import { useStore } from '../hooks/useStore';
@@ -15,26 +13,36 @@ const Home = observer(() => {
     <Layout
       title={`Hello from ${siteConfig.title}`}
       description="Description will go into a meta tag in <head />">
-      <main>
-        <button
-          className={clsx('button button--secondary button--sm', styles.button)}
-          onClick={() => {
-            documentStore.setClicks(documentStore.clicks - 1);
-          }}
+      <main className={clsx(styles.main)}>
+        <div>
+            <button
+              className={clsx('button button--secondary button--sm', styles.button)}
+              onClick={() => {
+                documentStore.setClicks(documentStore.clicks - 1);
+              }}
+            >
+              -
+            </button>
+            <span className={clsx('badge badge--primary', styles.badge)}>
+              {documentStore.clicks}
+            </span>
+            <button
+              className={clsx('button button--secondary button--sm', styles.button)}
+              onClick={() => {
+                documentStore.setClicks(documentStore.clicks + 1);
+              }}
+            >
+              +
+            </button>
+        </div>
+        
+        <ContextEditor
+            className={clsx('language-py', styles.code)}
         >
-          -
-        </button>
-        <span className={clsx('badge badge--primary', styles.badge)}>
-          {documentStore.clicks}
-        </span>
-        <button
-          className={clsx('button button--secondary button--sm', styles.button)}
-          onClick={() => {
-            documentStore.setClicks(documentStore.clicks + 1);
-          }}
-        >
-          +
-        </button>
+            {
+                `print('Hello Live Brython! ❤️')`
+            }
+        </ContextEditor>
       </main>
     </Layout>
   );

@@ -4,6 +4,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "experimentalDecorators": false,
-    "target": "ES6"
-  }
+    "module": "esnext",
+    "target": "esnext",
+  },
+  "references": [
+    {
+      "path": "../docusaurus-live-brython"
+    }
+  ]
 }

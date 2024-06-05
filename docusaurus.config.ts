@@ -128,6 +128,9 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+  themes: [
+    'docusaurus-live-brython'
+  ]
 };
 
 export default config;

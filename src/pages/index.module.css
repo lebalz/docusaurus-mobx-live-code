@@ -24,3 +24,14 @@
 .badge {
   padding: 0.6em 2em;
 }
+.main {
+  padding: 2rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1em;
+}
+.code {
+  min-width: 400px;
+}
