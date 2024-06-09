@@ -1,7 +1,8 @@
-import { action, autorun, computed, makeObservable, observable, override, reaction } from 'mobx';
+import { action, autorun, computed, makeObservable, observable, override, reaction, toJS } from 'mobx';
 import { DocumentStore } from '../stores/documentStore';
 import { v4 as uuidv4 } from 'uuid';
-import { splitPreCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
+import { sanitizePyScript, splitPreCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
+import { DOM_ELEMENT_IDS } from 'docusaurus-live-brython/theme/CodeEditor/constants';
 
 export enum Status {
     IDLE = 'IDLE',
@@ -87,11 +88,13 @@ export default class Document {
     @observable accessor showRaw: boolean;
     @observable accessor isLoaded: boolean;
     @observable accessor status: Status = Status.IDLE;
-    versions = observable.array<Version>([]);
-    logs = observable.array<LogMessage>([]);
+    @observable accessor isGraphicsmodalOpen: boolean;
+    @observable accessor isPasted: boolean = false;
+    versions = observable.array<Version>([], {deep: false});
+    logs = observable.array<LogMessage>([], {deep: false});
 
 
-    constructor(props: InitState, libDir: string, store: DocumentStore) {
+    constructor(props: InitState, store: DocumentStore) {
         this.store = store;
         this.id = props.id || uuidv4();
         this.source = props.id ? 'remote' : 'local';
@@ -138,14 +141,17 @@ export default class Document {
 
     @action
     clearLogMessages() {
+        this.logs.clear();
     }
 
     @action
     setExecuting(isExecuting: boolean) {
+        this.isExecuting = isExecuting;
     }
 
     @action
     addLogMessage(message: LogMessage) {
+        this.logs.push({output: message.output, timeStamp: Date.now(), type: message.type});
     }
 
     @action
@@ -155,6 +161,33 @@ export default class Document {
 
     @action
     execScript() {
+        const toExec = `${this.code}`;
+        const lineShift = this.preCode.split(/\n/).length;
+        const src = `from brython_runner import run
+run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
+`;
+        if (!(window as any).__BRYTHON__) {
+            alert('Brython not loaded');
+            return;
+        }
+        if (this.hasGraphicsOutput) {
+            this.isGraphicsmodalOpen = true;
+        }
+        this.isExecuting = true;
+        const active = document.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
+        active.setAttribute('data--start-time', `${Date.now()}`);
+        /**
+         * ensure that the script is executed after the current event loop.
+         * Otherwise, the brython script will not be able to access the graphics output.
+         */
+        setTimeout(() => {
+            (window as any).__BRYTHON__.runPythonSource(
+                src,
+                {
+                    pythonpath: [this.store.libDir]
+                }
+            );
+        }, 0);
     }
 
     @action
@@ -164,7 +197,10 @@ export default class Document {
 
     @action
     stopScript() {
-
+        const code = document?.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
+        if (code) {
+            code.removeAttribute('data--start-time');
+        }
     }
 
     @computed
@@ -189,16 +225,6 @@ export default class Document {
     }
 
     @computed
-    get isGraphicsmodalOpen() {
-        return false;
-    }
-
-    @computed
-    get isPasted() {
-        return false;
-    }
-
-    @computed
     get versionsLoaded() {
         return false;
     }
@@ -208,7 +234,15 @@ export default class Document {
     closeGraphicsModal() {
     }
 
-    subscribe(listener: () => void, selector: keyof typeof Document) {
+    subscribe(listener: () => void, selector: keyof Document) {
+        if (Array.isArray(this[selector])) {
+            return reaction(
+                () => (this[selector] as Array<any>).slice().length,
+                (curr, prev) => {
+                    listener();
+                }
+            );
+        }
         return reaction(
             () => this[selector],
             listener
@@ -219,6 +253,30 @@ export default class Document {
     get pristineCode() {
         return this._pristineCode;
     }
+
+    @computed
+    get logsJS() {
+        return toJS(this.logs);
+    }
+
+    @computed
+    get versionsJS() {
+        return toJS(this.versions);
+    }
+
+    
+    @action
+    setIsPasted(isPasted: boolean) {
+        this.isPasted = isPasted;
+    };
+    @action
+    setShowRaw(showRaw: boolean) {
+        this.showRaw = showRaw;
+    };
+    @action
+    setStatus(status: Status) {
+        this.status = status;
+    };
 
     get lang() {
         if (this._lang === 'py') {

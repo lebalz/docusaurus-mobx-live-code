@@ -7,6 +7,9 @@ export class DocumentStore {
     readonly root: RootStore;
 
     @observable accessor clicks: number = 0;
+    @observable accessor libDir: string = '/bry-libs/';
+    @observable accessor syncMaxOnceEvery: number = 1000;
+
 
     documents = observable.array<Document>([]);
     
@@ -14,9 +17,16 @@ export class DocumentStore {
         this.root = root;
     }
 
+    /**
+     * only to demonstrate that mobx reactivity 
+     * works across stores
+     */
     @action
     setClicks(clicks: number) {
         this.clicks = clicks;
+        this.documents.forEach((d) => {
+            d.setCode(`print('Clicked ${clicks} times')`);
+        });
     }
 
     @action
