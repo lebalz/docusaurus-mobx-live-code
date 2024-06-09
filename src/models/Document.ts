@@ -1,77 +1,21 @@
-import { action, autorun, computed, makeObservable, observable, override, reaction, toJS } from 'mobx';
+import { action, computed, observable, reaction } from 'mobx';
 import { DocumentStore } from '../stores/documentStore';
 import { v4 as uuidv4 } from 'uuid';
 import { sanitizePyScript, splitPreCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
 import throttle from 'lodash/throttle';
-import { CANVAS_OUTPUT_TESTER, DOM_ELEMENT_IDS, GRAPHICS_OUTPUT_TESTER, GRID_IMPORTS_TESTER, TURTLE_IMPORTS_TESTER } from 'docusaurus-live-brython/theme/CodeEditor/constants';
-
-export enum Status {
-    IDLE = 'IDLE',
-    SYNCING = 'SYNCING',
-    ERROR = 'ERROR',
-    SUCCESS = 'SUCCESS'
-}
-
-export interface LogMessage {
-    type: 'done' | 'stdout' | 'stderr' | 'start';
-    output: string;
-    timeStamp: number;
-}
-
-export interface Version {
-    code: string;
-    createdAt: Date;
-    version: number;
-    pasted?: boolean;
-}
-
-export interface StoredScript {
-    code: string;
-    createdAt: Date;
-    updatedAt: Date;
-    versions: Version[];
-}
-export interface InitState {
-    id: string | undefined;
-    lang: 'py' | string;
-    title: string;
-    raw: string;
-    readonly: boolean;
-    versioned: boolean;
-}
-
-export interface DocumentProps extends StoredScript {
-    /**
-     * this is normally a uuid
-     */
-    id: string;
-    /**
-     * this is the codeId used to
-     * - identify dom elements for this block
-     * - setup the brython communicator with this id
-     * - when using the default storage, this is the key used to 
-     *   store the code to local storage
-     */
-    codeId: string;
-    pristineCode: string;
-    showRaw: boolean;
-    isExecuting?: boolean;
-    preCode: string;
-    lang: 'py' | string;
-    logs: LogMessage[];
-    isGraphicsmodalOpen: boolean;
-    hasGraphicsOutput: boolean;
-    hasTurtleOutput: boolean;
-    hasCanvasOutput: boolean;
-    hasEdits: boolean;
-    /**
-     * Storage props
-    */
-    isLoaded: boolean;
-    status: Status;
-    versionsLoaded: boolean;
-    isPasted: boolean;
-}
+import { 
+    CANVAS_OUTPUT_TESTER, 
+    DOM_ELEMENT_IDS, 
+    GRAPHICS_OUTPUT_TESTER, 
+    GRID_IMPORTS_TESTER, 
+    TURTLE_IMPORTS_TESTER 
+} from 'docusaurus-live-brython/theme/CodeEditor/constants';
+import { 
+    type InitState, 
+    type LogMessage, 
+    type Version,
+    Status
+} from 'docusaurus-live-brython/theme/CodeEditor/WithScript/Types';
 
 
 export default class Document {
