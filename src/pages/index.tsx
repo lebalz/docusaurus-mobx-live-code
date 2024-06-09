@@ -38,9 +38,11 @@ const Home = observer(() => {
         
         <ContextEditor
             className={clsx('language-py', styles.code)}
+            versioned
+            id="b51e5f3f-57a2-447b-a277-2201e2198771"
         >
             {
-                `print('Hello Live Brython! ❤️')`
+                `from turtle import *\nforward(100)`
             }
         </ContextEditor>
       </main>

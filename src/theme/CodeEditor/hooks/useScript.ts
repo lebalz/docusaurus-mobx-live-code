@@ -22,6 +22,11 @@ const useStableSnapshot = (getSnapshot: () => Array<any>) => {
 export const useScript = <T extends keyof Document>(store: Document, selector: T): Document[T] => {
     const isArray = Array.isArray(store[selector]);
     if (isArray) {
+        /**
+         * arrays are treated differently as they are expected to be
+         * immutable, so we can use a stable snapshot to track changes
+         * in the array
+         */
         return useSyncExternalStore(
             useCallback((callback) => {
                 const disposer = store.subscribe(callback, selector);

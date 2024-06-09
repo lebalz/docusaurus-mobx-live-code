@@ -2,7 +2,8 @@ import { action, autorun, computed, makeObservable, observable, override, reacti
 import { DocumentStore } from '../stores/documentStore';
 import { v4 as uuidv4 } from 'uuid';
 import { sanitizePyScript, splitPreCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
-import { DOM_ELEMENT_IDS } from 'docusaurus-live-brython/theme/CodeEditor/constants';
+import throttle from 'lodash/throttle';
+import { CANVAS_OUTPUT_TESTER, DOM_ELEMENT_IDS, GRAPHICS_OUTPUT_TESTER, GRID_IMPORTS_TESTER, TURTLE_IMPORTS_TESTER } from 'docusaurus-live-brython/theme/CodeEditor/constants';
 
 export enum Status {
     IDLE = 'IDLE',
@@ -75,6 +76,7 @@ export interface DocumentProps extends StoredScript {
 
 export default class Document {
     readonly store: DocumentStore;
+    readonly isVersioned: boolean;
     readonly _pristineCode: string;
     readonly id: string;
     readonly codeId: string;
@@ -102,41 +104,18 @@ export default class Document {
         this.isExecuting = false;
         this.showRaw = false;
         this.isLoaded = true;
+        this.isVersioned = props.versioned && this.source === 'remote';
 
         const {pre, code} = splitPreCode(props.raw) as {pre: string, code: string};
         this._pristineCode = code;
         this.code = code;
+        if (this.isVersioned) {
+            this.versions.push({code: code, createdAt: new Date(), version: 1});
+        }
         this.preCode = pre;
         this.codeId = `code.${props.title || props.lang}.${this.id}`.replace(/(-|\.)/g, '_');
         this.updatedAt = new Date();
         this.createdAt = new Date();
-    }
-
-    @computed
-    get props(): DocumentProps {
-        return {
-            id: this.id,
-            codeId: this.codeId,
-            code: this.code,
-            pristineCode: this._pristineCode,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            preCode: this.preCode,
-            lang: 'python',
-            isExecuting: false,
-            logs: [],
-            isGraphicsmodalOpen: false,
-            hasGraphicsOutput: false,
-            hasTurtleOutput: false,
-            hasCanvasOutput: false,
-            hasEdits: false,
-            isLoaded: this.isLoaded,
-            status: Status.IDLE,
-            versionsLoaded: false,
-            isPasted: true,
-            showRaw: false,
-            versions: this.versions
-        }
     }
 
     @action
@@ -155,16 +134,64 @@ export default class Document {
     }
 
     @action
-    setCode(raw: string, action?: 'insert' | 'remove' | string) {
-        this.code = raw;
+    setCode(code: string, action?: 'insert' | 'remove' | string) {
+        if (this.isPasted && action === 'remove') {
+            return;
+        }
+        this.code = code;
+        const updatedAt = new Date();
+        this.updatedAt = updatedAt;
+        if (this.isVersioned) {
+            this.addVersion({
+                code: code,
+                createdAt: updatedAt,
+                version: this.versions.length + 1,
+                pasted: this.isPasted
+            });
+        }
+        if (this.isPasted) {
+            this.isPasted = false;
+        }
+
+        /**
+         * call the api to save the code...
+         */
+    }
+
+    @action
+    loadVersions() {
+        // nop
+    }
+
+    
+    @action
+    _addVersion(version: Version) {
+        if (!this.isVersioned) {
+            return;
+        }
+        this.versions.push(version);
+    }
+
+    addVersion = throttle(
+        this._addVersion,
+        DocumentStore.syncMaxOnceEvery,
+        {leading: false, trailing: true}
+    );
+
+    @computed
+    get codeToExecute() {
+        if (this.preCode.length > 0) {
+            return `${this.preCode}\n${this.code}`;
+        }
+        return `${this.code}`;
     }
 
     @action
     execScript() {
-        const toExec = `${this.code}`;
+        console.log(this.codeToExecute, this.hasGraphicsOutput)
         const lineShift = this.preCode.split(/\n/).length;
         const src = `from brython_runner import run
-run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
+run("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lineShift})
 `;
         if (!(window as any).__BRYTHON__) {
             alert('Brython not loaded');
@@ -176,6 +203,7 @@ run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
         this.isExecuting = true;
         const active = document.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
         active.setAttribute('data--start-time', `${Date.now()}`);
+        console.log('rt', DocumentStore.router);
         /**
          * ensure that the script is executed after the current event loop.
          * Otherwise, the brython script will not be able to access the graphics output.
@@ -184,7 +212,7 @@ run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
             (window as any).__BRYTHON__.runPythonSource(
                 src,
                 {
-                    pythonpath: [this.store.libDir]
+                    pythonpath: DocumentStore.router === 'hash' ? [] : [DocumentStore.libDir]
                 }
             );
         }, 0);
@@ -192,9 +220,17 @@ run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
 
     @action
     saveNow() {
-
+        /**
+         * call the api to save the code...
+         */
     }
 
+    /**
+     * stop the script from running
+     * wheter the script is running or not is derived from the
+     * `data--start-time` attribute on the communicator element.
+     * This is used in combination with the game loop
+     */
     @action
     stopScript() {
         const code = document?.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
@@ -205,33 +241,34 @@ run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
 
     @computed
     get hasGraphicsOutput() {
-        return false;
+        return this.hasTurtleOutput || this.hasCanvasOutput || GRAPHICS_OUTPUT_TESTER.test(this.codeToExecute);
     }
 
     @computed
     get hasTurtleOutput() {
-        return false;
+        return TURTLE_IMPORTS_TESTER.test(this.codeToExecute);
     }
 
 
     @computed
     get hasCanvasOutput() {
-        return false;
+        return CANVAS_OUTPUT_TESTER.test(this.codeToExecute) || GRID_IMPORTS_TESTER.test(this.codeToExecute);
     }
 
     @computed
     get hasEdits() {
-        return false;
+        return this.code !== this.pristineCode;
     }
 
     @computed
     get versionsLoaded() {
-        return false;
+        return true;
     }
 
 
     @action
     closeGraphicsModal() {
+        this.isGraphicsmodalOpen = false;
     }
 
     subscribe(listener: () => void, selector: keyof Document) {
@@ -254,17 +291,6 @@ run("""${sanitizePyScript(toExec || '')}""", '${this.codeId}', ${lineShift})
         return this._pristineCode;
     }
 
-    @computed
-    get logsJS() {
-        return toJS(this.logs);
-    }
-
-    @computed
-    get versionsJS() {
-        return toJS(this.versions);
-    }
-
-    
     @action
     setIsPasted(isPasted: boolean) {
         this.isPasted = isPasted;

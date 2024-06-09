@@ -176,7 +176,7 @@
   resolved "https://registry.yarnpkg.com/@babel/compat-data/-/compat-data-7.24.7.tgz#d23bbea508c3883ba8251fb4164982c36ea577ed"
   integrity sha512-qJzAIcv03PyaWqxRgO4mSU3lihncDT296vnyuE2O8uA4w3UHWI4S3hgeZd1L8W1Bft40w9JxJ2b412iDUFFRhw==
 
-"@babel/core@^7.21.3", "@babel/core@^7.23.3":
+"@babel/core@^7.21.3", "@babel/core@^7.23.3", "@babel/core@^7.24.7":
   version "7.24.7"
   resolved "https://registry.yarnpkg.com/@babel/core/-/core-7.24.7.tgz#b676450141e0b52a3d43bc91da86aa608f950ac4"
   integrity sha512-nykK+LEK86ahTkX/3TgauT0ikKoNCfKHEaZYTUVupJdTLzGNvrblu4u6fa7DhZONAltdf8e662t/abY8idrd/g==
@@ -3716,10 +3716,10 @@ dns-packet@^5.2.2:
   dependencies:
     "@leichtgewicht/ip-codec" "^2.0.1"
 
-docusaurus-live-brython@^3.0.0-beta.15:
-  version "3.0.0-beta.15"
-  resolved "https://registry.yarnpkg.com/docusaurus-live-brython/-/docusaurus-live-brython-3.0.0-beta.15.tgz#1505f232b62a3955d2b19ad9d056d88e13ee41af"
-  integrity sha512-tXzWEK9S1Lz/D/a2Xnd45e/lxvm3fKYDRmpwu9H8l2dtVy047q3EwEjeFpy5+3zrMVezml2UbboeDZpKrRVN+Q==
+docusaurus-live-brython@^3.0.0-beta.18:
+  version "3.0.0-beta.18"
+  resolved "https://registry.yarnpkg.com/docusaurus-live-brython/-/docusaurus-live-brython-3.0.0-beta.18.tgz#16526c06658af7b58bbdcfc371a7a296af1d62fd"
+  integrity sha512-FFFx98rZSqMBvL9JNTa+M/CmIwwWd1FOMvUTtKXyLL+AWEfOJcwikwlsPe2Icbg55UhDpJU/S0NIK77nYz6Cgw==
   dependencies:
     "@docusaurus/core" "3.4.0"
     "@docusaurus/theme-classic" "3.4.0"

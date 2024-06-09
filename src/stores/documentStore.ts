@@ -2,13 +2,15 @@ import { action, computed, makeObservable, observable, override } from 'mobx';
 import { RootStore } from './rootStore';
 import { computedFn } from 'mobx-utils';
 import Document from '../models/Document';
+import { type RouterType } from '@docusaurus/types';
 
 export class DocumentStore {
     readonly root: RootStore;
 
     @observable accessor clicks: number = 0;
-    @observable accessor libDir: string = '/bry-libs/';
-    @observable accessor syncMaxOnceEvery: number = 1000;
+    static accessor libDir: string = '/bry-libs/';
+    static syncMaxOnceEvery: number = 1000;
+    static router: RouterType = 'hash';
 
 
     documents = observable.array<Document>([]);
