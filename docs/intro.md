@@ -6,6 +6,18 @@ sidebar_position: 1
 
 Let's discover **Docusaurus in less than 5 minutes**.
 
+
+```py live_py slim
+print("Hello, world!")
+```
+
+```py live_py id=661b0cb2-92ff-4f5b-aabc-0308cbe8d73a
+from turtle import *
+for i in range(5):
+    forward(100)
+    right(144)
+```
+
 ## Getting Started
 
 Get started by **creating a new site**.

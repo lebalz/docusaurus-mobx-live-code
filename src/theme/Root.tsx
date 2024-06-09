@@ -8,7 +8,13 @@ export default function Root({children}) {
     const {libDir, syncMaxOnceEvery} = usePluginData('docusaurus-live-brython') as { libDir: string; syncMaxOnceEvery: number; };
     const {siteConfig} = useDocusaurusContext();
     React.useEffect(() => {
+        /**
+         * Expose the store to the window object
+         */
         (window as any).store = rootStore;
+        /**
+         * Set some configuration options
+         */
         DocumentStore.syncMaxOnceEvery = syncMaxOnceEvery;
         DocumentStore.libDir = libDir;
         DocumentStore.router = siteConfig.future.experimental_router;

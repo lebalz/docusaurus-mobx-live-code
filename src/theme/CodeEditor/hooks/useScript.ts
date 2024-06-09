@@ -19,8 +19,8 @@ const useStableSnapshot = (getSnapshot: () => Array<any>) => {
 };
 
 
-export const useScript = <T extends keyof Document>(store: Document, selector: T): Document[T] => {
-    const isArray = Array.isArray(store[selector]);
+export const useScript = <T extends keyof Document>(model: Document, selector: T): Document[T] => {
+    const isArray = Array.isArray(model[selector]);
     if (isArray) {
         /**
          * arrays are treated differently as they are expected to be
@@ -29,31 +29,25 @@ export const useScript = <T extends keyof Document>(store: Document, selector: T
          */
         return useSyncExternalStore(
             useCallback((callback) => {
-                const disposer = store.subscribe(callback, selector);
-                return () => {
-                    disposer()
-                };
-            }, [store, selector]),
+                return model.subscribe(callback, selector);
+            }, [model, selector]),
             useCallback(
                 useStableSnapshot(() => {
-                    return store[selector] as Array<any>;
+                    return model[selector] as Array<any>;
                 }) as () => Document[T],
-                [store, selector]
+                [model, selector]
             )
         );
     }
     return useSyncExternalStore(
         useCallback((callback) => {
-            const disposer = store.subscribe(callback, selector);
-            return () => {
-                disposer()
-            };
-        }, [store, selector]),
+            return model.subscribe(callback, selector);
+        }, [model, selector]),
         useCallback(
             () => {
-                return store[selector];
+                return model[selector];
             },
-            [store, selector]
+            [model, selector]
         )
     );
 }

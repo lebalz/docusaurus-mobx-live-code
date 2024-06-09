@@ -1,5 +1,4 @@
 import React from "react";
-import { usePluginData } from "@docusaurus/useGlobalData";
 import { observer } from "mobx-react-lite";
 import { InitState } from "docusaurus-live-brython/theme/CodeEditor/WithScript/Types";
 import Document from "@site/src/models/Document";
@@ -18,10 +17,10 @@ const ScriptContext = observer((props: InitState & { children: React.ReactNode; 
         const document = new Document({...props, id: id}, documentStore);
         documentStore.addDocument(document);
     }, [props.id, documentStore]);
-    
+
     if (!documentStore.find(id)) {
         return <div>Load</div>;
-        }
+    }
     return (
         <Context.Provider value={documentStore.find(id)}>
             {props.children}

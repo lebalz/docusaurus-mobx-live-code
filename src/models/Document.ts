@@ -132,7 +132,6 @@ export default class Document {
 
     @action
     execScript() {
-        console.log(this.codeToExecute, this.hasGraphicsOutput)
         const lineShift = this.preCode.split(/\n/).length;
         const src = `from brython_runner import run
 run("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lineShift})
@@ -147,7 +146,6 @@ run("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lin
         this.isExecuting = true;
         const active = document.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
         active.setAttribute('data--start-time', `${Date.now()}`);
-        console.log('rt', DocumentStore.router);
         /**
          * ensure that the script is executed after the current event loop.
          * Otherwise, the brython script will not be able to access the graphics output.
@@ -218,10 +216,8 @@ run("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lin
     subscribe(listener: () => void, selector: keyof Document) {
         if (Array.isArray(this[selector])) {
             return reaction(
-                () => (this[selector] as Array<any>).slice().length,
-                (curr, prev) => {
-                    listener();
-                }
+                () => (this[selector] as Array<any>).length,
+                listener
             );
         }
         return reaction(
