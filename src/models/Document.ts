@@ -133,9 +133,7 @@ export default class Document {
     @action
     execScript() {
         const lineShift = this.preCode.split(/\n/).length;
-        const src = `from brython_runner import run
-run("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lineShift})
-`;
+        const src = `from brython_runner import run\nrun("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lineShift})\n`;
         if (!(window as any).__BRYTHON__) {
             alert('Brython not loaded');
             return;
