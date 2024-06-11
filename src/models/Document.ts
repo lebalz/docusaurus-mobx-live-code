@@ -1,7 +1,6 @@
 import { action, computed, observable, reaction } from 'mobx';
 import { DocumentStore } from '../stores/documentStore';
 import { v4 as uuidv4 } from 'uuid';
-import { sanitizePyScript } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
 import throttle from 'lodash/throttle';
 import { 
     CANVAS_OUTPUT_TESTER, 
