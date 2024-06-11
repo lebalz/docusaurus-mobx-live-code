@@ -3716,10 +3716,10 @@ dns-packet@^5.2.2:
   dependencies:
     "@leichtgewicht/ip-codec" "^2.0.1"
 
-docusaurus-live-brython@^3.0.0-beta.18:
-  version "3.0.0-beta.18"
-  resolved "https://registry.yarnpkg.com/docusaurus-live-brython/-/docusaurus-live-brython-3.0.0-beta.18.tgz#16526c06658af7b58bbdcfc371a7a296af1d62fd"
-  integrity sha512-FFFx98rZSqMBvL9JNTa+M/CmIwwWd1FOMvUTtKXyLL+AWEfOJcwikwlsPe2Icbg55UhDpJU/S0NIK77nYz6Cgw==
+docusaurus-live-brython@^3.0.0-beta.21:
+  version "3.0.0-beta.21"
+  resolved "https://registry.yarnpkg.com/docusaurus-live-brython/-/docusaurus-live-brython-3.0.0-beta.21.tgz#7432cfceb183083e085e2e8f35de1805f9614f74"
+  integrity sha512-5e8YT5To7fpLuEAGMgB2kOelHaHEeUukrhklM6O78nfzBcm4lQh8W+IS2cCqdJZQltQb7VE+t65HMeYpuzntPA==
   dependencies:
     "@docusaurus/core" "3.4.0"
     "@docusaurus/theme-classic" "3.4.0"

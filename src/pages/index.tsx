@@ -42,7 +42,20 @@ const Home = observer(() => {
             id="b51e5f3f-57a2-447b-a277-2201e2198771"
         >
             {
-                `from turtle import *\nforward(100)`
+`#
+from time import time
+t0 = time()
+### PRE
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n-1) + fib(n-2)
+fib(25)
+### POST
+t1 = time()
+print(f'Execution time: {t1 - t0}s')
+#
+`
             }
         </ContextEditor>
       </main>

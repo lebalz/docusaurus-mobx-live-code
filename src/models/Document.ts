@@ -1,7 +1,7 @@
 import { action, computed, observable, reaction } from 'mobx';
 import { DocumentStore } from '../stores/documentStore';
 import { v4 as uuidv4 } from 'uuid';
-import { sanitizePyScript, splitPreCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
+import { sanitizePyScript } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/helpers';
 import throttle from 'lodash/throttle';
 import { 
     CANVAS_OUTPUT_TESTER, 
@@ -16,6 +16,7 @@ import {
     type Version,
     Status
 } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/Types';
+import { runCode } from 'docusaurus-live-brython/theme/CodeEditor/WithScript/bryRunner';
 
 
 export default class Document {
@@ -26,10 +27,11 @@ export default class Document {
     readonly codeId: string;
     readonly source: 'local' | 'remote';
     readonly _lang: 'py' | string;
+    readonly preCode: string;
+    readonly postCode: string;
     @observable accessor createdAt: Date;
     @observable accessor updatedAt: Date;
     @observable accessor code: string;
-    @observable accessor preCode: string;
     @observable accessor isExecuting: boolean;
     @observable accessor showRaw: boolean;
     @observable accessor isLoaded: boolean;
@@ -50,13 +52,13 @@ export default class Document {
         this.isLoaded = true;
         this.isVersioned = props.versioned && this.source === 'remote';
 
-        const {pre, code} = splitPreCode(props.raw) as {pre: string, code: string};
-        this._pristineCode = code;
-        this.code = code;
+        this._pristineCode = props.code;
+        this.code = props.code;
         if (this.isVersioned) {
-            this.versions.push({code: code, createdAt: new Date(), version: 1});
+            this.versions.push({code: props.code, createdAt: new Date(), version: 1});
         }
-        this.preCode = pre;
+        this.preCode = props.preCode;
+        this.postCode = props.postCode;
         this.codeId = `code.${props.title || props.lang}.${this.id}`.replace(/(-|\.)/g, '_');
         this.updatedAt = new Date();
         this.createdAt = new Date();
@@ -123,39 +125,17 @@ export default class Document {
     );
 
     @computed
-    get codeToExecute() {
-        if (this.preCode.length > 0) {
-            return `${this.preCode}\n${this.code}`;
-        }
-        return `${this.code}`;
+    get _codeToExecute() {
+        return `${this.preCode}\n${this.code}\n${this.postCode}`;
     }
 
     @action
     execScript() {
-        const lineShift = this.preCode.split(/\n/).length;
-        const src = `from brython_runner import run\nrun("""${sanitizePyScript(this.codeToExecute || '')}""", '${this.codeId}', ${lineShift})\n`;
-        if (!(window as any).__BRYTHON__) {
-            alert('Brython not loaded');
-            return;
-        }
         if (this.hasGraphicsOutput) {
             this.isGraphicsmodalOpen = true;
         }
         this.isExecuting = true;
-        const active = document.getElementById(DOM_ELEMENT_IDS.communicator(this.codeId));
-        active.setAttribute('data--start-time', `${Date.now()}`);
-        /**
-         * ensure that the script is executed after the current event loop.
-         * Otherwise, the brython script will not be able to access the graphics output.
-         */
-        setTimeout(() => {
-            (window as any).__BRYTHON__.runPythonSource(
-                src,
-                {
-                    pythonpath: DocumentStore.router === 'hash' ? [] : [DocumentStore.libDir]
-                }
-            );
-        }, 0);
+        runCode(this.code, this.preCode, this.postCode, this.codeId, DocumentStore.libDir, DocumentStore.router);
     }
 
     @action
@@ -181,18 +161,18 @@ export default class Document {
 
     @computed
     get hasGraphicsOutput() {
-        return this.hasTurtleOutput || this.hasCanvasOutput || GRAPHICS_OUTPUT_TESTER.test(this.codeToExecute);
+        return this.hasTurtleOutput || this.hasCanvasOutput || GRAPHICS_OUTPUT_TESTER.test(this._codeToExecute);
     }
 
     @computed
     get hasTurtleOutput() {
-        return TURTLE_IMPORTS_TESTER.test(this.codeToExecute);
+        return TURTLE_IMPORTS_TESTER.test(this._codeToExecute);
     }
 
 
     @computed
     get hasCanvasOutput() {
-        return CANVAS_OUTPUT_TESTER.test(this.codeToExecute) || GRID_IMPORTS_TESTER.test(this.codeToExecute);
+        return CANVAS_OUTPUT_TESTER.test(this._codeToExecute) || GRID_IMPORTS_TESTER.test(this._codeToExecute);
     }
 
     @computed
